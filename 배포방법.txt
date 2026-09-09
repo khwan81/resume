@@ -1,0 +1,74 @@
+경력기술서 — 암호화 배포 폴더
+==============================
+
+이 폴더를 어떤 정적 호스팅에 올려도 그대로 동작합니다.
+서버는 파일만 내려주고, 비밀번호 확인과 복호화는 보는 사람의 브라우저에서 일어납니다.
+따라서 GitHub Pages 처럼 소스가 공개되는 곳에 올려도 본문과 영상은 암호문으로만 존재합니다.
+
+구성
+  index.html        잠금 페이지 + 암호화된 본문 (0.23MB)
+  media/*.mp4.enc   암호화된 영상 20개 (5.7MB, 클릭 전까지 로드 안 함)
+  robots.txt        검색엔진 전체 차단
+  .nojekyll         GitHub Pages 의 Jekyll 처리 비활성화
+
+방식
+  PBKDF2-SHA256 (400,000회) 로 비밀번호에서 키를 만들고 AES-256-GCM 으로 암호화.
+  틀린 비밀번호는 인증 태그 검증에서 걸려 어떤 내용도 보이지 않습니다.
+
+
+열리는 방법 두 가지
+------------------
+  https://주소/                    비밀번호 입력창이 뜸
+  https://주소/#k=비밀번호          입력 없이 바로 열림 (# 뒤 내용은 서버로 전송되지 않음)
+
+  두 번째 링크를 공유하면 "링크를 가진 사람만" 조건이 됩니다.
+  열린 뒤에는 주소창에서 비밀번호가 자동으로 지워집니다.
+
+
+비밀번호 변경 / 재생성
+----------------------
+  경력기술서_빌드 폴더에서:
+
+    python encrypt.py --pw "새비밀번호"        지정
+    python encrypt.py                          12자리 자동 생성
+
+  실행하면 이 폴더의 index.html 과 media/ 가 새 비밀번호로 다시 만들어집니다.
+  (이 안내 파일은 유지됩니다)
+
+  영상을 바꾼 뒤에는 먼저
+    python build.py --hq --crf 33 --sec 10 --vw 1024
+  를 실행하고 encrypt.py 를 다시 돌리세요.
+
+
+올리는 곳
+---------
+A. GitHub Pages  (무료, 저장소 Public 이어도 안전 — 전부 암호문)
+   이 폴더에서
+     git init -b main
+     git add .
+     git commit -m "resume"
+     git remote add origin https://github.com/<계정>/<저장소>.git
+     git push -u origin main
+   저장소 Settings > Pages > Branch: main / (root)
+   → https://<계정>.github.io/<저장소>/
+
+   영상 교체 후에는 히스토리 누적을 피하려면
+     git add . && git commit --amend --no-edit && git push -f
+
+B. Cloudflare Pages  (무료, git 없이 폴더 드래그 업로드)
+   dash.cloudflare.com > Workers & Pages > Create > Pages > Upload assets
+   → https://<프로젝트>.pages.dev
+
+C. Netlify  (무료, 폴더 드래그)
+   app.netlify.com > Add new site > Deploy manually
+
+
+주의
+----
+- file:// 로 직접 열면 비밀번호 화면과 본문은 뜨지만 영상은 재생되지 않습니다
+  (브라우저가 로컬 파일 간 fetch 를 막음). 반드시 http(s) 로 배포해서 쓰세요.
+- 유튜브 포트폴리오 영상은 https 로 열릴 때 그 자리에서 재생됩니다.
+- 비밀번호가 포함된 링크(#k=)는 받은 사람 브라우저 히스토리에 남습니다.
+  민감하면 비밀번호 없는 링크를 주고 비밀번호는 따로 전달하세요.
+- 비밀번호 길이가 보안 강도입니다. 자동 생성 12자리(약 70비트)면 충분하지만
+  직접 정할 땐 10자 이상, 사전 단어 조합은 피하세요.
